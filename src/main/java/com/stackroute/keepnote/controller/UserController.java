@@ -1,5 +1,20 @@
 package com.stackroute.keepnote.controller;
 
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.stackroute.keepnote.exception.UserAlreadyExistException;
+import com.stackroute.keepnote.exception.UserNotFoundException;
+import com.stackroute.keepnote.model.User;
 import com.stackroute.keepnote.service.UserService;
 
 /*
@@ -10,7 +25,7 @@ import com.stackroute.keepnote.service.UserService;
  * format. Starting from Spring 4 and above, we can use @RestController annotation which 
  * is equivalent to using @Controller and @ResposeBody annotation
  */
-
+@RestController
 public class UserController {
 
 	/*
@@ -18,8 +33,14 @@ public class UserController {
 	 * autowiring) Please note that we should not create an object using the new
 	 * keyword
 	 */
-
+	@Autowired
+	UserAuthenticationController userAuthenticationController;
+	
+	@Autowired
+    UserService userService;
+	
 	public UserController(UserService userService) {
+		this.userService = userService;
 	}
 
 	/*
@@ -37,7 +58,16 @@ public class UserController {
 	 * This handler method should map to the URL "/user/register" using HTTP POST
 	 * method
 	 */
-
+	@RequestMapping(value = "/user/register", method = RequestMethod.POST)
+	 public ResponseEntity<?> registerUser(@RequestBody User user,HttpSession session){
+		try {
+				userService.registerUser(user);
+				return new ResponseEntity<Void>(HttpStatus.CREATED);
+			}catch(UserAlreadyExistException uaee) {
+				return new ResponseEntity<Void>(HttpStatus.CONFLICT);
+			}		
+	}
+	
 	/*
 	 * Define a handler method which will update a specific user by reading the
 	 * Serialized object from request body and save the updated user details in a
@@ -49,7 +79,49 @@ public class UserController {
 	 * 
 	 * This handler method should map to the URL "/user/{id}" using HTTP PUT method.
 	 */
+	//@RequestMapping(value = "/user/{id}", method = RequestMethod.PUT)
+	@PutMapping("/user/{id}")
+	public ResponseEntity<?> updateUser(@PathVariable("id") String id, @RequestBody User user, HttpSession session) {
+		try {			 
+			if(session.getAttribute("loggedInUserId").equals(user.getUserId())) {
+				try {
+					User updatedUser = userService.updateUser(user,id);
+					if(updatedUser!= null) {
+						return new ResponseEntity<String>("OK",HttpStatus.OK);
+					}else {
+						return new ResponseEntity<String>("UserNotFound",HttpStatus.NOT_FOUND);
+					}					
+				}catch(Exception e) {
+					return new ResponseEntity<String>("UserNotFound",HttpStatus.NOT_FOUND);
+				}				
+			}
+			else {
+			return new ResponseEntity<String>("Exception",HttpStatus.UNAUTHORIZED);
+			}
+		}catch(Exception e) {
+			return new ResponseEntity<String>("Exception",HttpStatus.UNAUTHORIZED);
+		}
+	}
+	/*@PutMapping("/user/{id}")
+    public ResponseEntity<?> updateUser(@RequestBody User user, HttpSession session) {
+        try {
+            if (!session.getAttribute("loggedInUserId").equals(user.getUserId())) {
+                return new ResponseEntity<String>("Unauthorized", HttpStatus.UNAUTHORIZED);
+            }
+            User userUpdated = userService.updateUser(user, user.getUserId());
+            if (userUpdated != null)
+                return new ResponseEntity<User>(user, HttpStatus.OK);
+            else
+                return new ResponseEntity<String>("Note Found", HttpStatus.NOT_FOUND);
 
+        } catch (NullPointerException e) {
+            return new ResponseEntity<String>("Unauthorized", HttpStatus.UNAUTHORIZED);
+
+        } catch (Exception e) {
+            return new ResponseEntity<String>("Not Found", HttpStatus.NOT_FOUND);
+
+        }
+    }*/
 	/*
 	 * Define a handler method which will delete a user from a database.
 	 * 
@@ -62,7 +134,22 @@ public class UserController {
 	 * This handler method should map to the URL "/user/{id}" using HTTP Delete
 	 * method" where "id" should be replaced by a valid userId without {}
 	 */
-
+    @RequestMapping(value ="/user/{id}",method = RequestMethod.DELETE)
+	public ResponseEntity<?> deleteUser(@PathVariable("id") String id, HttpSession session) {
+		try {
+			if (session.getAttribute("loggedInUserId").equals(id)) {
+				if (userService.deleteUser(id)) {
+					return new ResponseEntity<String>("Deleted", HttpStatus.OK);
+				} else {
+					return new ResponseEntity<String>("Not Found", HttpStatus.NOT_FOUND);
+				}
+			} else {
+				return new ResponseEntity<String>("user id didn't match", HttpStatus.UNAUTHORIZED);
+			}
+		} catch (Exception e) {
+			return new ResponseEntity<String>("May be session is null", HttpStatus.UNAUTHORIZED);
+		}
+	}
 	/*
 	 * Define a handler method which will show details of a specific user handle
 	 * UserNotFoundException as well. This handler method should return any one of
@@ -73,5 +160,27 @@ public class UserController {
 	 * using HTTP GET method where "id" should be replaced by a valid userId without
 	 * {}
 	 */
-
+@RequestMapping(value ="/user/{id}",method = RequestMethod.GET)
+public ResponseEntity<?> getUserById(@PathVariable("id") String id, HttpSession session){
+	try {
+		if(session.getAttribute("loggedInUserId").equals(id)) {
+			try{
+				User user = userService.getUserById(id);
+				if(user != null) {
+				session.setAttribute("UserById",user);
+				return new ResponseEntity<String>("Found", HttpStatus.OK);
+				}
+				else {
+				return new ResponseEntity<String>("Not Found", HttpStatus.NOT_FOUND);
+				}
+			}catch(UserNotFoundException unfe)	{
+				return new ResponseEntity<String>("Not Found", HttpStatus.NOT_FOUND);
+			}
+		}else {
+			return new ResponseEntity<String>("user id didn't match", HttpStatus.UNAUTHORIZED);
+		}
+	}catch(Exception e) {
+		return new ResponseEntity<String>("May be session is null", HttpStatus.UNAUTHORIZED);
+	}
+}
 }

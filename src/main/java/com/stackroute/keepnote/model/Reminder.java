@@ -3,6 +3,15 @@ package com.stackroute.keepnote.model;
 import java.util.Date;
 import java.util.List;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.OneToMany;
+
+import net.minidev.json.annotate.JsonIgnore;
+
 /*
  * The class "Reminder" will be acting as the data model for the Reminder Table in the database. 
  * Please note that this class is annotated with @Entity annotation. 
@@ -10,7 +19,7 @@ import java.util.List;
  * If it finds any, then it will begin the process of looking through that particular 
  * Java object to recreate it as a table in your database.
  */
-
+@Entity
 public class Reminder {
 	/*
 	 * This class should have seven fields
@@ -24,49 +33,121 @@ public class Reminder {
 	 * and @JsonIgnore
 	 */
 
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO)
+	int reminderId;
+	
+	@Column
+	String reminderName;
+	
+	@Column
+	String reminderDescription;
+	
+	@Column
+	String reminderType;
+	
+	@Column
+	String reminderCreatedBy;	
+	
+    @OneToMany
+    @JsonIgnore
+    List<Note> notes;
+    
+    @Column
+	Date reminderCreationDate;
+	
 	public Reminder() {
 
 	}
-
-	public Reminder(int Int, String string, String string1, String string2, String string3, List<Note> list,
-			Date date) {
+	
+	public Reminder(int reminderId, String reminderName, String reminderDescription, String reminderType,
+			String reminderCreatedBy, List<Note> notes, Date reminderCreationDate) {
+		super();
+		this.reminderId = reminderId;
+		this.reminderName = reminderName;
+		this.reminderDescription = reminderDescription;
+		this.reminderType = reminderType;
+		this.reminderCreatedBy = reminderCreatedBy;
+		this.notes = notes;
+		this.reminderCreationDate = reminderCreationDate;
 	}
 
 	public int getReminderId() {
-		return 0;
-
+		return reminderId;
 	}
 
-	public void setReminderId(int Int) {
-
+	public void setReminderId(int reminderId) {
+		this.reminderId = reminderId;
 	}
 
-	public void setReminderName(String string) {
+	public String getReminderName() {
+		return reminderName;
+	}
 
+	public void setReminderName(String reminderName) {
+		this.reminderName = reminderName;
 	}
 
 	public String getReminderDescription() {
-		return null;
+		return reminderDescription;
 	}
 
-	public void setReminderDescription(String string) {
-
+	public void setReminderDescription(String reminderDescription) {
+		this.reminderDescription = reminderDescription;
 	}
 
-	public void setReminderType(String string) {
-
+	public String getReminderType() {
+		return reminderType;
 	}
 
-	public void setReminderCreationDate(Date date) {
-
+	public void setReminderType(String reminderType) {
+		this.reminderType = reminderType;
 	}
 
-	public void setReminderCreatedBy(String string) {
-
+	public String getReminderCreatedBy() {
+		return reminderCreatedBy;
 	}
 
-	public void setNotes(List<Note> list) {
-
+	public void setReminderCreatedBy(String reminderCreatedBy) {
+		this.reminderCreatedBy = reminderCreatedBy;
 	}
 
-}
+	public Date getReminderCreationDate() {
+		return reminderCreationDate;
+	}
+
+	public void setReminderCreationDate(Date reminderCreationDate) {
+		this.reminderCreationDate = reminderCreationDate;
+	}
+
+	public List<Note> getNotes() {
+		return notes;
+	}
+
+	public void setNotes(List<Note> notes) {
+		this.notes = notes;
+	}
+
+	@Override
+	public String toString() {
+		return "Reminder [reminderId=" + reminderId + ", reminderName=" + reminderName + ", reminderDescription="
+				+ reminderDescription + ", reminderType=" + reminderType + ", reminderCreatedBy=" + reminderCreatedBy
+				+ ", notes=" + notes + ", reminderCreationDate=" + reminderCreationDate + "]";
+	}
+
+	/*@Override
+	public boolean equals(Object o) {
+		if (!(o instanceof User)) {
+			return false;
+		}
+		Reminder reminder = (Reminder) o;
+		return getReminderId() == (reminder.getReminderId()) &&
+				getReminderName().equals(reminder.getReminderName())
+				&& getReminderDescription().equals(reminder.getReminderDescription()) && 
+				getReminderType().equals(reminder.getReminderType()) && getReminderCreatedBy().equals(reminder.getReminderCreatedBy())
+				&& getReminderCreationDate().equals(getReminderCreationDate()) && getNotes().equals(getNotes());
+	}*/
+	}
+
+		
+

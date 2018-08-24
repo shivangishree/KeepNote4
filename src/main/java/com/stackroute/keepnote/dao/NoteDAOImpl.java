@@ -1,9 +1,17 @@
 package com.stackroute.keepnote.dao;
 
 import java.util.List;
+
+import javax.persistence.Query;
+
 import org.hibernate.SessionFactory;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.stackroute.keepnote.exception.NoteNotFoundException;
+import com.stackroute.keepnote.exception.ReminderNotFoundException;
 import com.stackroute.keepnote.model.Note;
+import com.stackroute.keepnote.model.Reminder;
 
 /*
  * This class is implementing the UserDAO interface. This class has to be annotated with 
@@ -14,16 +22,25 @@ import com.stackroute.keepnote.model.Note;
  * 					transaction. The database transaction happens inside the scope of a persistence 
  * 					context.  
  * */
-
+@Repository
+@Transactional
 public class NoteDAOImpl implements NoteDAO {
 
 	/*
 	 * Autowiring should be implemented for the SessionFactory.(Use
 	 * constructor-based autowiring.
 	 */
+	SessionFactory sessionFactory; 
 
 	public NoteDAOImpl(SessionFactory sessionFactory) {
+		this.sessionFactory = sessionFactory;
+	}
+	public SessionFactory getSessionFactory() {
+		return sessionFactory;
+	}
 
+	public void setSessionFactory(SessionFactory sessionFactory) {
+		this.sessionFactory = sessionFactory;
 	}
 
 	/*
@@ -31,8 +48,14 @@ public class NoteDAOImpl implements NoteDAO {
 	 */
 	
 	public boolean createNote(Note note) {
-		return false;
-
+    try {
+    Note n = getNoteById(note.getNoteId());
+    }catch(NoteNotFoundException nnfe) {
+    	sessionFactory.getCurrentSession().save(note);
+        sessionFactory.getCurrentSession().flush();
+        return true;
+    }    
+    return false;
 	}
 
 	/*
@@ -40,7 +63,15 @@ public class NoteDAOImpl implements NoteDAO {
 	 */
 	
 	public boolean deleteNote(int noteId) {
-		return false;
+		Note note; 
+		try {
+			note = getNoteById(noteId);
+		} catch (NoteNotFoundException e) {
+			return false;
+		} 
+		sessionFactory.getCurrentSession().delete(note);
+		sessionFactory.getCurrentSession().flush();
+		return true;
 	}
 
 	/*
@@ -48,8 +79,9 @@ public class NoteDAOImpl implements NoteDAO {
 	 */
 	
 	public List<Note> getAllNotesByUserId(String userId) {
-		return null;
-
+		String hql = "FROM Note where createdBy= :userId";
+        Query query = getSessionFactory().openSession().createQuery(hql).setParameter("userId", userId);
+        return query.getResultList();
 	}
 
 	/*
@@ -57,8 +89,13 @@ public class NoteDAOImpl implements NoteDAO {
 	 */
 	
 	public Note getNoteById(int noteId) throws NoteNotFoundException {
-		return null;
-
+		Note note = sessionFactory.getCurrentSession().get(Note.class,noteId);
+        if(note == null) {
+        	throw new NoteNotFoundException("Note not found");
+        }
+        else {
+        	return note;
+        }
 	}
 
 	/*
@@ -66,8 +103,14 @@ public class NoteDAOImpl implements NoteDAO {
 	 */
 
 	public boolean UpdateNote(Note note) {
-		return false;
-
+		try {
+			Note n = getNoteById(note.getNoteId());
+		} catch (NoteNotFoundException e) {
+			return false;
+		}
+		sessionFactory.getCurrentSession().save(note);
+        sessionFactory.getCurrentSession().flush();
+        return true;
 	}
 
 }
